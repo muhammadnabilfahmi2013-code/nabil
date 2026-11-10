@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChessMaster – Ultimate Chess Game</title>
+    <!-- Tailwind CSS untuk Desain Modern -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chess.js untuk Aturan Catur Resmi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            grid-template-rows: repeat(8, minmax(0, 1fr));
+        }
+        /* Kustomisasi Tema Papan Catur */
+        .square-light { background-color: #f0d9b5; }
+        .square-dark { background-color: #b58863; }
+        .square-light.theme-blue { background-color: #dee3e6; }
+        .square-dark.theme-blue { background-color: #8ca2ad; }
+        .square-light.theme-green { background-color: #eeeed2; }
+        .square-dark.theme-green { background-color: #769656; }
+        
+        .selected { background-color: rgba(255, 255, 0, 0.5) !important; }
+        .highlight::after {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Navbar / Header -->
+    <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 flex justify-between items-center shadow-lg">
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="showScreen('home-screen')">
+            <div class="bg-gradient-to-tr from-blue-600 to-purple-600 p-2 rounded-xl text-white shadow-md">
+                <i class="fa-solid fa-chess-knight text-xl"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-wide bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">ChessMaster</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button onclick="showScreen('profile-screen')" class="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-sm transition">
+                <i class="fa-solid fa-user text-blue-400"></i>
+                <span id="nav-username" class="font-medium">Player</span>
+                <span class="bg-blue-600 text-xs px-2 py-0.5 rounded-full" id="nav-level">Lv. 1</span>
+            </button>
+            <button onclick="showScreen('settings-screen')" class="text-slate-400 hover:text-white transition p-2">
+                <i class="fa-solid fa-gear text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow flex items-center justify-center p-4">
+
+        <!-- 1. HOME SCREEN -->
+        <div id="home-screen" class="screen max-w-4xl w-full text-center space-y-8 animate-fade-in">
+            <div class="space-y-3">
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight">Ultimate Chess Experience</h2>
+                <p class="text-slate-400 max-w-lg mx-auto">Asah strategi, tantang komputer, atau mainkan bersama teman dalam satu perangkat dengan standar aturan catur resmi.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-3xl mx-auto">
+                <button onclick="startPvP()" class="bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 p-6 rounded-2xl shadow-xl flex flex-col items-center space-y-3 transition transform hover:-translate-y-1">
+                    <i class="fa-solid fa-user-group text-3xl"></i>
+                    <span class="font-semibold text-lg">Play with Friends</span>
+                </button>
+                <button onclick="openDifficultyModal()" class="bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 p-6 rounded-2xl shadow-xl flex flex-col items-center space-y-3 transition transform hover:-translate-y-1">
+                    <i class="fa-solid fa-robot text-3xl"></i>
+                    <span class="font-semibold text-lg">Play vs Computer</span>
+                </button>
+                <button onclick="showScreen('tutorial-screen')" class="bg-gradient-to-br from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 p-6 rounded-2xl shadow-xl flex flex-col items-center space-y-3 transition transform hover:-translate-y-1">
+                    <i class="fa-solid fa-book-open text-3xl"></i>
+                    <span class="font-semibold text-lg">Chess Tutorial</span>
+                </button>
+                <button onclick="showScreen('leaderboard-screen')" class="bg-gradient-to-br from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 p-6 rounded-2xl shadow-xl flex flex-col items-center space-y-3 transition transform hover:-translate-y-1">
+                    <i class="fa-solid fa-trophy text-3xl"></i>
+                    <span class="font-semibold text-lg">Leaderboard</span>
+                </button>
+            </div>
+
+            <div class="flex justify-center space-x-4 pt-4">
+                <button onclick="showScreen('challenges-screen')" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm font-medium transition flex items-center space-x-2">
+                    <i class="fa-solid fa-puzzle-piece text-purple-400"></i>
+                    <span>Chess Challenges</span>
+                </button>
+                <button onclick="showScreen('about-screen')" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm font-medium transition flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-info text-blue-400"></i>
+                    <span>About Game</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. GAME SCREEN (Papan Catur & Panel Samping) -->
+        <div id="game-screen" class="screen hidden max-w-5xl w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <!-- Papan Catur (2 Kolom di Desktop) -->
+            <div class="lg:col-span-2 flex flex-col items-center">
+                <!-- Info Lawan / Atas -->
+                <div class="w-full max-w-[450px] flex justify-between items-center mb-2 px-1">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold" id="top-player-icon">AI</div>
+                        <span id="top-player-name" class="font-semibold text-sm">Computer (Medium)</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 px-3 py-1 rounded-lg text-sm font-mono" id="top-timer">10:00</div>
+                </div>
+
+                <!-- Papan Catur 8x8 -->
+                <div id="chessboard" class="board-grid w-full max-w-[450px] aspect-square rounded-xl overflow-hidden shadow-2xl border-4 border-slate-800 relative">
+                    <!-- Square akan di-generate via JavaScript -->
+                </div>
+
+                <!-- Info Pemain / Bawah -->
+                <div class="w-full max-w-[450px] flex justify-between items-center mt-2 px-1">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold">P1</div>
+                        <span id="bottom-player-name" class="font-semibold text-sm">Player</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 px-3 py-1 rounded-lg text-sm font-mono" id="bottom-timer">10:00</div>
+                </div>
+            </div>
+
+            <!-- Panel Kontrol & Riwayat Langkah -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col h-[500px] justify-between shadow-xl">
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg" id="game-mode-title">Player vs Computer</h3>
+                        <button onclick="showScreen('home-screen'); stopGame();" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                    <div id="game-status" class="bg-blue-950/50 border border-blue-800/50 text-blue-300 text-sm p-3 rounded-xl mb-4 font-medium text-center">
+                        Giliran Putih untuk Bergerak
+                    </div>
+                    
+                    <!-- Riwayat Langkah -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 h-48 overflow-y-auto font-mono text-xs space-y-1" id="move-history">
+                        <div class="text-slate-500 text-center italic">Riwayat langkah akan muncul di sini...</div>
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi Permainan -->
+                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800">
+                    <button onclick="undoMove()" class="bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-medium text-sm transition flex flex-col items-center">
+                        <i class="fa-solid fa-rotate-left mb-1"></i> Undo
+                    </button>
+                    <button onclick="restartGame()" class="bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-medium text-sm transition flex flex-col items-center">
+                        <i class="fa-solid fa-redo mb-1"></i> Restart
+                    </button>
+                    <button onclick="newGame()" class="bg-blue-600 hover:bg-blue-500 py-2.5 rounded-xl font-medium text-sm transition flex flex-col items-center">
+                        <i class="fa-solid fa-play mb-1"></i> New Game
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. TUTORIAL SCREEN -->
+        <div id="tutorial-screen" class="screen hidden max-w-3xl w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 class="text-xl font-bold flex items-center space-x-2">
+                    <i class="fa-solid fa-book-open text-emerald-400"></i>
+                    <span>Chess Tutorial & Panduan Smp</span>
+                </h3>
+                <button onclick="showScreen('home-screen')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 text-sm text-slate-300">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-base text-white mb-1"><i class="fa-solid fa-chess-rook text-blue-400 mr-2"></i> Pengenalan Bidak Catur</h4>
+                    <p>Setiap pemain memiliki 16 bidak: 1 Raja (King), 1 Ratu (Queen), 2 Benteng (Rook), 2 Gajah (Bishop), 2 Kuda (Knight), dan 8 Pion (Pawn).</p>
+                </div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-base text-white mb-1"><i class="fa-solid fa-chess-king text-amber-400 mr-2"></i> Skak & Skakmat (Check & Checkmate)</h4>
+                    <p>Skak adalah kondisi ketika Raja diserang. Raja harus segera menyelamatkan diri. Skakmat terjadi ketika Raja diserang dan tidak ada jalan keluar lagi (Game Over).</p>
+                </div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-base text-white mb-1"><i class="fa-solid fa-lightbulb text-purple-400 mr-2"></i> Strategi Dasar</h4>
+                    <p>1. Kuasai bagian tengah papan di awal permainan.<br>2. Kembangkan perwira (Kuda dan Gajah) sebelum Ratu.<br>3. Lindungi Raja dengan melakukan rokade (Castling).</p>
+                </div>
+            </div>
+            <button onclick="showScreen('home-screen')" class="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-medium transition">Kembali ke Menu Utama</button>
+        </div>
+
+        <!-- 4. LEADERBOARD SCREEN -->
+        <div id="leaderboard-screen" class="screen hidden max-w-xl w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 class="text-xl font-bold flex items-center space-x-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i>
+                    <span>Leaderboard & Statistik</span>
+                </h3>
+                <button onclick="showScreen('home-screen')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold" id="lb-player-name">Player</span>
+                    <span class="text-blue-400 font-mono" id="lb-player-stats">Menang: 0 | Kalah: 0</span>
+                </div>
+                <div class="flex justify-between items-center bg-slate-950/50 p-3 rounded-xl border border-slate-800/50 text-slate-400">
+                    <span>2. Grandmaster AI</span>
+                    <span class="font-mono">Menang: 142</span>
+                </div>
+                <div class="flex justify-between items-center bg-slate-950/50 p-3 rounded-xl border border-slate-800/50 text-slate-400">
+                    <span>3. ChessNinja</span>
+                    <span class="font-mono">Menang: 98</span>
+                </div>
+            </div>
+            <button onclick="showScreen('home-screen')" class="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-medium transition">Kembali</button>
+        </div>
+
+        <!-- 5. SETTINGS SCREEN -->
+        <div id="settings-screen" class="screen hidden max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 class="text-xl font-bold flex items-center space-x-2">
+                    <i class="fa-solid fa-gear text-slate-400"></i>
+                    <span>Pengaturan Game</span>
+                </h3>
+                <button onclick="showScreen('home-screen')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-2">Nama Profil Pemain</label>
+                    <input type="text" id="username-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500" value="Player">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-2">Tema Papan Catur</label>
+                    <select id="board-theme-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                        <option value="classic">Klasik (Cokelat)</option>
+                        <option value="blue">Modern Biru</option>
+                        <option value="green">Turnamen Hijau</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="saveSettings()" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-medium transition">Simpan Pengaturan</button>
+        </div>
+
+        <!-- 6. PROFILE SCREEN -->
+        <div id="profile-screen" class="screen hidden max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl text-center">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 class="text-xl font-bold">Profil Pemain</h3>
+                <button onclick="showScreen('home-screen')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-2">
+                <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-full mx-auto flex items-center justify-center text-3xl font-bold shadow-lg">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <h4 class="text-xl font-bold" id="profile-name-display">Player</h4>
+                <p class="text-blue-400 text-sm font-medium" id="profile-level-display">Level 1 - Pemula Catur</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-left">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400 block">Total Menang</span>
+                    <span class="text-lg font-bold text-emerald-400" id="stat-wins">0</span>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400 block">Total Kalah</span>
+                    <span class="text-lg font-bold text-rose-400" id="stat-losses">0</span>
+                </div>
+            </div>
+            <button onclick="showScreen('home-screen')" class="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-medium transition">Kembali</button>
+        </div>
+
+        <!-- 7. CHALLENGES SCREEN -->
+        <div id="challenges-screen" class="screen hidden max-w-lg w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 class="text-xl font-bold">Chess Challenges</h3>
+                <button onclick="showScreen('home-screen')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-sm">Skakmat 1 Langkah (Mate in 1)</h4>
+                        <p class="text-xs text-slate-400">Temukan langkah kemenangan cepat.</p>
+                    </div>
+                    <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-lg font-medium">Tersedia</span>
+                </div>
+            </div>
+            <button onclick="showScreen('home-screen')" class="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-medium transition">Kembali</button>
+        </div>
+
+        <!-- 8. ABOUT SCREEN -->
+        <div id="about-screen" class="screen hidden max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl text-center">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 class="text-xl font-bold">About Game</h3>
+                <button onclick="showScreen('home-screen')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-sm text-slate-300">
+                <div class="bg-gradient-to-tr from-blue-600 to-purple-600 p-4 rounded-2xl inline-block text-white shadow-lg mb-2">
+                    <i class="fa-solid fa-chess-knight text-3xl"></i>
+                </div>
+                <h4 class="font-bold text-lg text-white">ChessMaster v1.0</h4>
+                <p>Aplikasi web game catur profesional interaktif yang dirancang khusus dengan dukungan chess.js untuk mendukung pengalaman bermain yang akurat dan menyenangkan.</p>
+            </div>
+            <button onclick="showScreen('home-screen')" class="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-medium transition">Kembali</button>
+        </div>
+
+        <!-- MODAL PILIH KESULITAN AI -->
+        <div id="difficulty-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-center">
+                <h3 class="text-xl font-bold">Pilih Tingkat Kesulitan AI</h3>
+                <div class="space-y-2">
+                    <button onclick="startPvC('easy')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-semibold transition">Easy Mode</button>
+                    <button onclick="startPvC('medium')" class="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-xl font-semibold transition">Medium Mode</button>
+                    <button onclick="startPvC('hard')" class="w-full bg-rose-600 hover:bg-rose-500 py-3 rounded-xl font-semibold transition">Hard Mode</button>
+                </div>
+                <button onclick="closeDifficultyModal()" class="text-sm text-slate-400 hover:text-white pt-2">Batal</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JavaScript Logika Game -->
+    <script>
+        let game = new Chess();
+        let boardTheme = 'classic';
+        let gameMode = 'pvp'; // 'pvp' atau 'pvc'
+        let aiDifficulty = 'medium'; // 'easy', 'medium', 'hard'
+        let selectedSquare = null;
+        let possibleMoves = [];
+        let playerStats = JSON.parse(localStorage.getItem('chess_stats')) || { wins: 0, losses: 0, username: 'Player' };
+
+        // Peta Ikon Bidak Unicode Catur Resmi
+        const pieceIcons = {
+            'w': { 'p': '♙', 'r': '♖', 'n': '♘', 'b': '♗', 'q': '♕', 'k': '♔' },
+            'b': { 'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚' }
+        };
+
+        function initApp() {
+            document.getElementById('username-input').value = playerStats.username;
+            updateProfileUI();
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function openDifficultyModal() {
+            document.getElementById('difficulty-modal').classList.remove('hidden');
+            document.getElementById('difficulty-modal').classList.add('flex');
+        }
+
+        function closeDifficultyModal() {
+            document.getElementById('difficulty-modal').classList.add('hidden');
+            document.getElementById('difficulty-modal').classList.remove('flex');
+        }
+
+        function startPvP() {
+            gameMode = 'pvp';
+            game.reset();
+            showScreen('game-screen');
+            document.getElementById('game-mode-title').innerText = 'Player vs Player';
+            document.getElementById('top-player-name').innerText = 'Player 2 (Hitam)';
+            document.getElementById('top-player-icon').innerText = 'P2';
+            renderBoard();
+            updateGameStatus();
+        }
+
+        function startPvC(difficulty) {
+            aiDifficulty = difficulty;
+            gameMode = 'pvc';
+            closeDifficultyModal();
+            game.reset();
+            showScreen('game-screen');
+            document.getElementById('game-mode-title').innerText = `Player vs Computer (${difficulty.toUpperCase()})`;
+            document.getElementById('top-player-name').innerText = `Computer (${difficulty})`;
+            document.getElementById('top-player-icon').innerText = 'AI';
+            renderBoard();
+            updateGameStatus();
+        }
+
+        function stopGame() {
+            game.reset();
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('chessboard');
+            boardEl.innerHTML = '';
+            const board = game.board();
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const squareDiv = document.createElement('div');
+                    const isLight = (r + c) % 2 === 0;
+                    let themeClass = 'square-dark';
+                    if (isLight) themeClass = 'square-light';
+                    if (boardTheme === 'blue') themeClass += isLight ? ' theme-blue' : ' theme-blue';
+                    if (boardTheme === 'green') themeClass += isLight ? ' theme-green' : ' theme-green';
+
+                    squareDiv.className = `board-square w-full h-full flex items-center justify-center text-3xl md:text-4xl cursor-pointer relative select-none ${themeClass}`;
+                    
+                    const squareNotation = String.fromCharCode(97 + c) + (8 - r);
+                    squareDiv.setAttribute('data-square', squareNotation);
+
+                    if (selectedSquare === squareNotation) {
+                        squareDiv.classList.add('selected');
+                    }
+
+                    if (possibleMoves.includes(squareNotation)) {
+                        squareDiv.classList.add('highlight');
+                    }
+
+                    const piece = board[r][c];
+                    if (piece) {
+                        squareDiv.innerText = pieceIcons[piece.color][piece.type];
+                        squareDiv.style.color = piece.color === 'w' ? '#ffffff' : '#0f172a';
+                        squareDiv.style.textShadow = piece.color === 'w' ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.3)';
+                    }
+
+                    squareDiv.addEventListener('click', () => handleSquareClick(squareNotation));
+                    boardEl.appendChild(squareDiv);
+                }
+            }
+        }
+
+        function handleSquareClick(square) {
+            if (game.game_over()) return;
+
+            if (!selectedSquare) {
+                const piece = game.get(square);
+                if (piece && piece.color === game.turn()) {
+                    selectedSquare = square;
+                    possibleMoves = game.moves({ square: square, verbose: true }).map(m => m.to);
+                    renderBoard();
+                }
+            } else {
+                if (possibleMoves.includes(square)) {
+                    // Cek promosi pion otomatis ke Ratu (Queen) demi kemudahan gameplay
+                    let moveObj = { from: selectedSquare, to: square, promotion: 'q' };
+                    let move = game.move(moveObj);
+                    
+                    if (move) {
+                        selectedSquare = null;
+                        possibleMoves = [];
+                        renderBoard();
+                        updateGameStatus();
+                        updateHistory(move);
+
+                        if (!game.game_over() && gameMode === 'pvc' && game.turn() === 'b') {
+                            setTimeout(makeAIMove, 300);
+                        }
+                    }
+                } else {
+                    selectedSquare = null;
+                    possibleMoves = [];
+                    renderBoard();
+                    // Coba pilih ulang jika mengklik bidak sendiri
+                    const piece = game.get(square);
+                    if (piece && piece.color === game.turn()) {
+                        selectedSquare = square;
+                        possibleMoves = game.moves({ square: square, verbose: true }).map(m => m.to);
+                        renderBoard();
+                    }
+                }
+            }
+        }
+
+        function makeAIMove() {
+            if (game.game_over()) return;
+            let moves = game.moves({ verbose: true });
+            if (moves.length === 0) return;
+
+            let chosenMove;
+            if (aiDifficulty === 'easy') {
+                // Random move
+                chosenMove = moves[Math.floor(Math.random() * moves.length)];
+            } else {
+                // Medium / Hard: Evaluasi sederhana tangkapan atau random legal
+                let captureMoves = moves.filter(m => m.captured);
+                if (captureMoves.length > 0 && aiDifficulty === 'hard') {
+                    chosenMove = captureMoves[Math.floor(Math.random() * captureMoves.length)];
+                } else {
+                    chosenMove = moves[Math.floor(Math.random() * moves.length)];
+                }
+            }
+
+            let move = game.move(chosenMove);
+            renderBoard();
+            updateGameStatus();
+            updateHistory(move);
+        }
+
+        function updateGameStatus() {
+            const statusEl = document.getElementById('game-status');
+            let turnText = game.turn() === 'w' ? 'Putih' : 'Hitam';
+
+            if (game.in_checkmate()) {
+                statusEl.innerText = `Skakmat! Pemenang: ${game.turn() === 'w' ? 'Hitam' : 'Putih'}`;
+                statusEl.className = 'bg-rose-950/50 border border-rose-800/50 text-rose-300 text-sm p-3 rounded-xl mb-4 font-medium text-center';
+                recordGameResult(game.turn() === 'w' ? 'loss' : 'win');
+            } else if (game.in_draw()) {
+                statusEl.innerText = 'Permainan Remis (Draw)!';
+                statusEl.className = 'bg-amber-950/50 border border-amber-800/50 text-amber-300 text-sm p-3 rounded-xl mb-4 font-medium text-center';
+            } else if (game.in_check()) {
+                statusEl.innerText = `Skak! Giliran ${turnText} untuk menyelamatkan Raja`;
+                statusEl.className = 'bg-rose-950/50 border border-rose-800/50 text-rose-300 text-sm p-3 rounded-xl mb-4 font-medium text-center';
+            } else {
+                statusEl.innerText = `Giliran ${turnText} untuk Bergerak`;
+                statusEl.className = 'bg-blue-950/50 border border-blue-800/50 text-blue-300 text-sm p-3 rounded-xl mb-4 font-medium text-center';
+            }
+        }
+
+        function updateHistory(move) {
+            const historyEl = document.getElementById('move-history');
+            if (historyEl.innerHTML.includes('Riwayat langkah')) {
+                historyEl.innerHTML = '';
+            }
+            const moveDiv = document.createElement('div');
+            moveDiv.innerText = `${move.color === 'w' ? 'Putih' : 'Hitam'}: ${move.san}`;
+            historyEl.appendChild(moveDiv);
+            historyEl.scrollTop = historyEl.scrollHeight;
+        }
+
+        function undoMove() {
+            game.undo();
+            if (gameMode === 'pvc') {
+                game.undo(); // Undo langkah AI juga
+            }
+            selectedSquare = null;
+            possibleMoves = [];
+            renderBoard();
+            updateGameStatus();
+        }
+
+        function restartGame() {
+            game.reset();
+            selectedSquare = null;
+            possibleMoves = [];
+            renderBoard();
+            updateGameStatus();
+        }
+
+        function newGame() {
+            restartGame();
+        }
+
+        function saveSettings() {
+            const newName = document.getElementById('username-input').value.trim();
+            if (newName) playerStats.username = newName;
+            boardTheme = document.getElementById('board-theme-select').value;
+            localStorage.setItem('chess_stats', JSON.stringify(playerStats));
+            updateProfileUI();
+            showScreen('home-screen');
+            renderBoard();
+        }
+
+        function updateProfileUI() {
+            document.getElementById('nav-username').innerText = playerStats.username;
+            document.getElementById('profile-name-display').innerText = playerStats.username;
+            document.getElementById('lb-player-name').innerText = playerStats.username;
+            document.getElementById('stat-wins').innerText = playerStats.wins;
+            document.getElementById('stat-losses').innerText = playerStats.losses;
+            document.getElementById('lb-player-stats').innerText = `Menang: ${playerStats.wins} | Kalah: ${playerStats.losses}`;
+        }
+
+        function recordGameResult(result) {
+            if (result === 'win') playerStats.wins++;
+            if (result === 'loss') playerStats.losses++;
+            localStorage.setItem('chess_stats', JSON.stringify(playerStats));
+            updateProfileUI();
+        }
+
+        // Jalankan Inisialisasi Awal
+        initApp();
+    </script>
+</body>
+</html>
